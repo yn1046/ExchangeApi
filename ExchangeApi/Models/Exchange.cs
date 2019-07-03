@@ -12,5 +12,12 @@ namespace ExchangeApi.Models
         public Guid ApiKey { get; set; }
         public double Balance { get; set; }
         public Dictionary<string, double> Rates { get; set; }
+
+        public double GetPrice(string currencies)
+        {
+            var from = currencies.Substring(0,3);
+            var to = currencies.Substring(3);
+            return Rates[from] / Rates[to];
+        }
     }
 }

@@ -33,20 +33,19 @@ namespace ExchangeApi.Controllers
     [ApiController]
     public class ExchangeController : ControllerBase
     {
-        public List<Exchange> StockExchanges { get; set; }
-        
         private ConnectionString connectionString =
+            new ConnectionString("exchanges.db")
+            {
+                Mode = FileMode.ReadOnly
+            };
+        
+        private ConnectionString writeConnectionString =
             new ConnectionString("exchanges.db")
             {
                 Mode = FileMode.Exclusive
             };
         
         private string collectionName = "exchanges";
-
-        public ExchangeController()
-        {
-            InitializeDatabase();
-        }
         
         // GET api/exchange
         [HttpGet]
@@ -59,11 +58,28 @@ namespace ExchangeApi.Controllers
             }
         }
 
-        // GET api/values/5
+        // GET api/exchange/5
         [HttpGet("{id}")]
         public ActionResult<string> Get(int id)
         {
             return $"value {id}";
+        }
+
+        // GET api/exchange/price
+        [Route("price/{currencies}")]
+        public JsonResult GetPrice(string currencies)
+        {
+            using (var db = new LiteDatabase(connectionString))
+            {
+                var coll = db.GetCollection<Exchange>(collectionName);
+                var exc = coll.FindOne(_ => true);
+                return new JsonResult(new
+                {
+                    ApiKey = exc.ApiKey,
+                    ExchangedCurrencies = currencies,
+                    ExchangeRate = exc.GetPrice(currencies)
+                });
+            }
         }
 
         // POST api/values
@@ -84,50 +100,5 @@ namespace ExchangeApi.Controllers
         {
         }
 
-        private void InitializeDatabase()
-        {
-            using (var db = new LiteDatabase(connectionString))
-            {
-                if (db.CollectionExists(collectionName)) return;
-                
-                var exchanges = db.GetCollection<Exchange>(collectionName);
-                exchanges.InsertBulk(new[]
-                {
-                    new Exchange
-                    {
-                        ApiKey = Guid.NewGuid(),
-                        Balance = 100,
-                        Rates = new Dictionary<string, double>
-                        {
-                            ["RUB"] = 60,
-                            ["EUR"] = 1.25,
-                            ["USD"] = 1
-                        }
-                    },
-                    new Exchange
-                    {
-                        ApiKey = Guid.NewGuid(),
-                        Balance = 75,
-                        Rates = new Dictionary<string, double>
-                        {
-                            ["RUB"] = 65,
-                            ["EUR"] = 1.20,
-                            ["USD"] = 1
-                        }
-                    },
-                    new Exchange
-                    {
-                        ApiKey = Guid.NewGuid(),
-                        Balance = 120,
-                        Rates = new Dictionary<string, double>
-                        {
-                            ["RUB"] = 59,
-                            ["EUR"] = 1.24,
-                            ["USD"] = 1
-                        }
-                    }
-                });
-            }
-        }
     }
 }
