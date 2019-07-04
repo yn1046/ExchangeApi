@@ -76,6 +76,16 @@ namespace ExchangeApi.Controllers
         }
 
         // POST api
+        /*
+          {
+            "balance": 27,
+            "rates": {
+                "RUB": 61,
+                "EUR": 1.23,
+                "USD": 1
+            }
+        }
+        */
         [HttpPost]
         public JsonResult AddExchange([FromBody]AddExchangeRequest addExchangeDraft)
         {
@@ -97,6 +107,12 @@ namespace ExchangeApi.Controllers
         }
 
         // POST api/3d7734e5-8c30-4e52-bb12-909453dfb8a8
+        /*
+            {
+                "currencies": "RUBUSD",
+                "amount": 1000
+            }
+         */
         [HttpPost("{id}")]
         public ActionResult DoExchange(Guid id, [FromBody] DoExchangeRequest request)
         {
