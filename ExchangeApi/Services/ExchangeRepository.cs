@@ -68,6 +68,19 @@ namespace ExchangeApi.Services
                 collection.Delete(id);
             }
         }
+
+        public void ApplyPercentageChanges()
+        {
+            using (var db = new LiteDatabase(writeConnectionString))
+            {
+                var collection = db.GetCollection<Exchange>(collectionName);
+                foreach (var exchange in collection.FindAll())
+                {
+                    exchange.UpdatePercentages(Percentages);
+                    collection.Update(exchange);
+                }
+            }
+        }
         
         private void InitializeDatabase()
         {

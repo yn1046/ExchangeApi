@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ExchangeApi.Models;
 using ExchangeApi.Services;
-using LiteDB;
 using Microsoft.AspNetCore.Mvc;
 
 /* Есть несколько бирж с их API, ключами (сделать имитацию работы с биржей через API)
@@ -55,7 +54,7 @@ namespace ExchangeApi.Controllers
             return new JsonResult(_repository.GetByApiKey(id));
         }
 
-        // GET api/price/USDRUB
+        // GET api/3545ef42-c90f-4430-9277-d195272b1690/price/USDRUB
         [Route("{id}/price/{currencies}")]
         public JsonResult GetPrice(Guid id, string currencies)
         {
@@ -68,7 +67,7 @@ namespace ExchangeApi.Controllers
             });
         }
         
-        // GET api/price/USDRUB
+        // GET api/3545ef42-c90f-4430-9277-d195272b1690/balances
         [Route("{id}/balances")]
         public JsonResult GetBalances(Guid id)
         {
@@ -78,22 +77,45 @@ namespace ExchangeApi.Controllers
 
         // POST api
         [HttpPost]
-        public JsonResult AddExchange([FromBody]ExchangeRequest exchangeDraft)
+        public JsonResult AddExchange([FromBody]AddExchangeRequest addExchangeDraft)
         {
             var exchange = new Exchange
             {
-                Rates = exchangeDraft.Rates
+                Rates = addExchangeDraft.Rates
             };
-            exchange.SetBalances(_repository.Percentages, exchangeDraft.Balance);
+            exchange.SetBalances(_repository.Percentages, addExchangeDraft.Balance);
             
             return new JsonResult(_repository.Add(exchange));
         }
 
+        // DELETE api/3545ef42-c90f-4430-9277-d195272b1690
         [HttpDelete("{id}")]
         public ActionResult RemoveExchange(Guid id)
         {
             _repository.Remove(id);
-            return new OkResult();
+            return Ok();
+        }
+
+        // POST api/3d7734e5-8c30-4e52-bb12-909453dfb8a8
+        [HttpPost("{id}")]
+        public ActionResult DoExchange(Guid id, [FromBody] DoExchangeRequest request)
+        {
+            var exchange = _repository.GetByApiKey(id);
+            var upCurrencies = request.Currencies.ToUpper();
+            var from = upCurrencies.Substring(0, 3);
+            var to = upCurrencies.Substring(3);
+
+            if (!exchange.CanExchange(request.Currencies, request.Amount))
+                return BadRequest("Couldn't perform the exchange.\n" +
+                                  $"Required amount: {request.Amount}\n" +
+                                  $"Actual balance: {exchange.Balances[from]}");
+            
+            var amountUsd = request.Amount * exchange.GetPrice(from + "USD");
+            var percent = amountUsd / exchange.GetFullBalanceInUsd() * 100;
+            _repository.Percentages[from] -= percent;
+            _repository.Percentages[to] += percent;
+            _repository.ApplyPercentageChanges();
+            return new JsonResult(_repository.GetAll());
         }
 
     }

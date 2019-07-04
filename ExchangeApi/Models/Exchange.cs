@@ -18,7 +18,7 @@ namespace ExchangeApi.Models
         {
             var from = currencies.Substring(0,3);
             var to = currencies.Substring(3);
-            return Rates[from] / Rates[to];
+            return Rates[to] / Rates[from];
         }
 
         public bool CanExchange(string currencies, double amount)
@@ -40,7 +40,7 @@ namespace ExchangeApi.Models
         {
             Balances = percentages.ToDictionary(
                 kv => kv.Key,
-                kv => percentages[kv.Key] / 100 * GetFullBalanceInUsd());
+                kv => percentages[kv.Key] / 100 * GetFullBalanceInUsd() * Rates[kv.Key]);
 
             return Balances;
         }
