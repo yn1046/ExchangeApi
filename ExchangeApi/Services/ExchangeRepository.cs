@@ -59,6 +59,15 @@ namespace ExchangeApi.Services
                 return exchange.ApiKey;
             }
         }
+
+        public void Remove(Guid id)
+        {
+            using (var db = new LiteDatabase(writeConnectionString))
+            {
+                var collection = db.GetCollection<Exchange>(collectionName);
+                collection.Delete(id);
+            }
+        }
         
         private void InitializeDatabase()
         {

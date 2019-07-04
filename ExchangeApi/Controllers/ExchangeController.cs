@@ -43,7 +43,7 @@ namespace ExchangeApi.Controllers
         
         // GET api/
         [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        public ActionResult<IEnumerable<string>> GetAll()
         {
             return new JsonResult(_repository.GetAll());
         }
@@ -89,16 +89,11 @@ namespace ExchangeApi.Controllers
             return new JsonResult(_repository.Add(exchange));
         }
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public ActionResult RemoveExchange(Guid id)
         {
+            _repository.Remove(id);
+            return new OkResult();
         }
 
     }
