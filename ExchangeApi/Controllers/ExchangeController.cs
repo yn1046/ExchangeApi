@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ExchangeApi.Models;
+using ExchangeApi.Services;
 using LiteDB;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,53 +34,32 @@ namespace ExchangeApi.Controllers
     [ApiController]
     public class ExchangeController : ControllerBase
     {
-        private ConnectionString connectionString =
-            new ConnectionString("exchanges.db")
-            {
-                Mode = FileMode.ReadOnly
-            };
-        
-        private ConnectionString writeConnectionString =
-            new ConnectionString("exchanges.db")
-            {
-                Mode = FileMode.Exclusive
-            };
-        
-        private string collectionName = "exchanges";
+        private ExchangeRepository _repository;
+
+        public ExchangeController(ExchangeRepository repository)
+        {
+            _repository = repository;
+        }
         
         // GET api/exchange
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
-            using (var db = new LiteDatabase(connectionString))
-            {
-                var exchanges = db.GetCollection<Exchange>(collectionName);
-                return new JsonResult(exchanges.FindAll());
-            }
+            return new JsonResult(_repository.GetAll());
         }
 
         // GET api/exchange/5
         [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+        public ActionResult<string> Get(Guid id)
         {
-            return $"value {id}";
+            return new JsonResult(_repository.GetByApiKey(id));
         }
 
-        // GET api/exchange/price
+        // GET api/exchange/price/USDRUB
         [Route("price/{currencies}")]
         public JsonResult GetPrice(string currencies)
         {
-            using (var db = new LiteDatabase(connectionString))
-            {
-                var coll = db.GetCollection<Exchange>(collectionName);
-                var exc = coll.FindOne(_ => true);
-                return new JsonResult(new
-                {
-                    ApiKey = exc.ApiKey,
-                    ExchangedCurrencies = currencies,
-                    ExchangeRate = exc.GetPrice(currencies)
-                });
-            }
+            return new JsonResult(new {Kek = "lol"});
         }
 
         // POST api/values

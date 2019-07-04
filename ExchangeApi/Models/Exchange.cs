@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using LiteDB;
+using NumDict = System.Collections.Generic.Dictionary<string, double>;
 
 namespace ExchangeApi.Models
 {
@@ -10,8 +11,8 @@ namespace ExchangeApi.Models
     {
         [BsonId]
         public Guid ApiKey { get; set; }
-        public double Balance { get; set; }
-        public Dictionary<string, double> Rates { get; set; }
+        public NumDict Balances { get; set; }
+        public NumDict Rates { get; set; }
 
         public double GetPrice(string currencies)
         {
@@ -19,5 +20,35 @@ namespace ExchangeApi.Models
             var to = currencies.Substring(3);
             return Rates[from] / Rates[to];
         }
+
+        public bool CanExchange(string currencies, double amount)
+        {
+            var from = currencies.Substring(0, 3);
+            return Balances[from] >= amount;
+        }
+
+        public NumDict SetBalances(NumDict percentages, double usdAmount)
+        {
+            Balances = percentages.ToDictionary(
+                kv => kv.Key,
+                kv => percentages[kv.Key] * usdAmount * Rates[kv.Key]);
+
+            return Balances;
+        }
+
+        public NumDict UpdatePercentages(NumDict percentages)
+        {
+            Balances = percentages.ToDictionary(
+                kv => kv.Key,
+                kv => percentages[kv.Key] * GetFullBalanceInUsd());
+
+            return Balances;
+        }
+
+        public double GetFullBalanceInUsd() => Balances.Sum(balance =>
+        {
+            var (key, value) = balance;
+            return value * Rates[key];
+        });
     }
 }
