@@ -30,7 +30,7 @@ getBalances() - Получает баланс всех валют в бирже.
 
 namespace ExchangeApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api")]
     [ApiController]
     public class ExchangeController : ControllerBase
     {
@@ -41,31 +41,52 @@ namespace ExchangeApi.Controllers
             _repository = repository;
         }
         
-        // GET api/exchange
+        // GET api/
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
         {
             return new JsonResult(_repository.GetAll());
         }
 
-        // GET api/exchange/5
+        // GET api/3545ef42-c90f-4430-9277-d195272b1690
         [HttpGet("{id}")]
         public ActionResult<string> Get(Guid id)
         {
             return new JsonResult(_repository.GetByApiKey(id));
         }
 
-        // GET api/exchange/price/USDRUB
-        [Route("price/{currencies}")]
-        public JsonResult GetPrice(string currencies)
+        // GET api/price/USDRUB
+        [Route("{id}/price/{currencies}")]
+        public JsonResult GetPrice(Guid id, string currencies)
         {
-            return new JsonResult(new {Kek = "lol"});
+            var upCurrencies = currencies.ToUpper();
+            var rate = _repository.GetByApiKey(id).GetPrice(upCurrencies);
+            return new JsonResult(new
+            {
+                Currencies = upCurrencies,
+                Rate = rate
+            });
+        }
+        
+        // GET api/price/USDRUB
+        [Route("{id}/balances")]
+        public JsonResult GetBalances(Guid id)
+        {
+            var balances = _repository.GetByApiKey(id).Balances;
+            return new JsonResult(balances);
         }
 
-        // POST api/values
+        // POST api
         [HttpPost]
-        public void Post([FromBody] string value)
+        public JsonResult AddExchange([FromBody]ExchangeRequest exchangeDraft)
         {
+            var exchange = new Exchange
+            {
+                Rates = exchangeDraft.Rates
+            };
+            exchange.SetBalances(_repository.Percentages, exchangeDraft.Balance);
+            
+            return new JsonResult(_repository.Add(exchange));
         }
 
         // PUT api/values/5

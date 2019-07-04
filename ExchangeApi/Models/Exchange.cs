@@ -10,7 +10,7 @@ namespace ExchangeApi.Models
     public class Exchange
     {
         [BsonId]
-        public Guid ApiKey { get; set; }
+        public Guid ApiKey { get; set; } = Guid.NewGuid();
         public NumDict Balances { get; set; }
         public NumDict Rates { get; set; }
 
@@ -31,7 +31,7 @@ namespace ExchangeApi.Models
         {
             Balances = percentages.ToDictionary(
                 kv => kv.Key,
-                kv => percentages[kv.Key] * usdAmount * Rates[kv.Key]);
+                kv => percentages[kv.Key] / 100 * usdAmount * Rates[kv.Key]);
 
             return Balances;
         }
@@ -40,7 +40,7 @@ namespace ExchangeApi.Models
         {
             Balances = percentages.ToDictionary(
                 kv => kv.Key,
-                kv => percentages[kv.Key] * GetFullBalanceInUsd());
+                kv => percentages[kv.Key] / 100 * GetFullBalanceInUsd());
 
             return Balances;
         }
@@ -48,7 +48,12 @@ namespace ExchangeApi.Models
         public double GetFullBalanceInUsd() => Balances.Sum(balance =>
         {
             var (key, value) = balance;
-            return value * Rates[key];
+            return value / Rates[key];
         });
+
+        public override int GetHashCode() => ApiKey.GetHashCode();
+
+        public override bool Equals(object obj) =>
+            obj is Exchange exchange && exchange.ApiKey == ApiKey;
     }
 }

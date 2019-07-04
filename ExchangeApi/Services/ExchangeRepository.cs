@@ -49,23 +49,32 @@ namespace ExchangeApi.Services
                 return exchanges;
             }
         }
+
+        public Guid Add(Exchange exchange)
+        {
+            using (var db = new LiteDatabase(writeConnectionString))
+            {
+                var collection = db.GetCollection<Exchange>(collectionName);
+                collection.Insert(exchange);
+                return exchange.ApiKey;
+            }
+        }
         
         private void InitializeDatabase()
         {
             using (var db = new LiteDatabase(writeConnectionString))
             {
-                if (db.CollectionExists(collectionName)) return;
-                
                 Percentages = new NumDict
                 {
                     ["RUB"] = 40,
                     ["USD"] = 20,
                     ["EUR"] = 40
                 };
+                
+                if (db.CollectionExists(collectionName)) return;
 
                 var exchangeOne = new Exchange
                 {
-                    ApiKey = Guid.NewGuid(),
                     Rates = new NumDict
                     {
                         ["RUB"] = 60,
@@ -75,7 +84,6 @@ namespace ExchangeApi.Services
                 };
                 var exchangeTwo = new Exchange
                 {
-                    ApiKey = Guid.NewGuid(),
                     Rates = new NumDict
                     {
                         ["RUB"] = 65,
@@ -85,7 +93,6 @@ namespace ExchangeApi.Services
                 };
                 var exchangeThree = new Exchange
                 {
-                    ApiKey = Guid.NewGuid(),
                     Rates = new NumDict
                     {
                         ["RUB"] = 59,
